@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sükûnet</title>
+<style>
+  :root{
+    --bg0:#0b1224; --bg1:#0f1a3a; --bg2:#0a2a49; --ink:#eaf0ff; --muted:#b9c1ff; --accent:#7c3aed;
+    --card:#151a2e; --stroke:#293168;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg0);min-height:100vh;overflow-x:hidden}
+  /* Animated ocean background */
+  body::before, body::after{
+    content:""; position:fixed; inset:-10vmax; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(32,72,160,.25), transparent 60%),
+      radial-gradient(900px 600px at 100% 10%, rgba(20,150,200,.20), transparent 60%),
+      linear-gradient(180deg, var(--bg1), var(--bg2));
+    filter:saturate(1.1) blur(0px);
+    animation: drift 28s linear infinite;
+  }
+  body::after{
+    z-index:-1; opacity:.25;
+    background:
+      radial-gradient(800px 400px at 20% 120%, rgba(0,180,255,.15), transparent 60%),
+      radial-gradient(700px 400px at 90% 130%, rgba(100,200,255,.10), transparent 60%);
+    animation: swell 18s ease-in-out infinite;
+  }
+  @keyframes drift{ 0%{transform:translateX(0)} 100%{transform:translateX(-6%)} }
+  @keyframes swell{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2%)} }
+
+  .wrap{max-width:780px;margin:0 auto;padding:18px 18px 28px}
+  .card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .row.center{justify-content:center}
+  .btn{padding:11px 18px;border-radius:10px;border:1px solid #313875;background:#1a2143;color:var(--ink);cursor:pointer;font-weight:700}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  select,input,textarea{padding:8px 10px;border-radius:10px;border:1px solid #313875;background:#121735;color:var(--ink)}
+  textarea{width:100%;min-height:90px}
+  .pill{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);background:#141a36cc;backdrop-filter:blur(4px)}
+  .help{color:var(--muted);font-size:.95rem}
+  .stage{display:grid;place-items:center;min-height:220px}
+  .ball{width:120px;height:120px;border-radius:999px;background:linear-gradient(135deg,var(--accent),#4b1fa6);
+    box-shadow:0 12px 24px rgba(0,0,0,.35);transform:scale(1);transition:transform .2s ease}
+  .phase{font-weight:900;margin-top:8px}
+  .bar{height:8px;background:#1b2147;border:1px solid #2b326b;border-radius:999px;overflow:hidden;margin-top:10px}
+  .bar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1) NEFES -->
+  <div id="s1" class="card">
+    <div class="help">Deseni seç, <b>Başlat</b> de. 3 döngü tamamlanınca “İlerle” açılır.</div>
+    <div class="row" style="margin-top:6px; justify-content:center">
+      <label>Desen: 
+        <select id="pat">
+          <option value="4,4,4,4">Kutu 4‑4‑4‑4</option>
+          <option value="5,0,5,0">Koherens 5‑5</option>
+          <option value="4,7,8,0">4‑7‑8</option>
+        </select>
+      </label>
+      <label>Süre (sn): <input id="dur" type="number" value="60" min="20" max="900" style="width:90px"></label>
+    </div>
+    <div class="stage">
+      <div class="ball" id="ball"></div>
+      <div class="phase" id="phase">Hazır</div>
+      <div class="help" id="sub">Akışı takip et</div>
+      <div class="bar" style="width:100%;"><span id="prog"></span></div>
+    </div>
+    <div class="row center">
+      <button class="btn" id="start" type="button">Başlat</button>
+    </div>
+    <div class="row center" style="margin-top:6px">
+      <button class="btn" id="pause" type="button" disabled>Duraklat</button>
+      <button class="btn" id="stop" type="button" disabled>Bitir</button>
+      <button class="btn" id="next1" type="button" disabled>İlerle →</button>
+    </div>
+  </div>
+
+  <!-- 2) BEDEN -->
+  <div id="s2" class="card" style="display:none">
+    <div class="help">Sırayla gevşet: <b>Omuzlar → Çene → Eller → Alın</b>. Her bölüm: <b>5 sn Sık</b> → <b>7 sn Bırak</b>.</div>
+    <div class="row center" style="margin-top:6px">
+      <div class="pill">Bölge: <b id="region">Hazır</b></div>
+      <div class="pill">Aşama: <b id="phase2">Bekle</b></div>
+      <div class="pill">Sayaç: <b id="timer2">00</b></div>
+    </div>
+    <div class="stage"><div class="ball" id="ball2"></div></div>
+    <div class="row center">
+      <button class="btn" id="start2" type="button">Başlat</button>
+    </div>
+    <div class="row center" style="margin-top:6px">
+      <button class="btn" id="pause2" type="button" disabled>Duraklat</button>
+      <button class="btn" id="stop2" type="button" disabled>Bitir</button>
+      <button class="btn" id="next2" type="button" disabled>İlerle →</button>
+    </div>
+  </div>
+
+  <!-- 3) GÖRSELLEME (dalga sesi opsiyonel) -->
+  <div id="s3" class="card" style="display:none">
+    <div class="help">Güvende hissettiğin bir yeri 60 sn hayal et. Metin her 12 sn’de bir yenilenir. İstersen dalga sesi aç.</div>
+    <div class="row center" style="margin-top:6px">
+      <div class="pill">Kalan: <b id="vizLeft">60</b> sn</div>
+      <label class="pill"><input type="checkbox" id="wavesOn" checked> Dalga sesi</label>
+      <label class="pill">Ses: <input id="vol" type="range" min="0" max="100" value="25" style="vertical-align:middle"></label>
+    </div>
+    <div class="row center" style="margin-top:6px">
+      <button class="btn" id="vizStart" type="button">Başlat</button>
+    </div>
+    <div class="row center" style="margin-top:6px">
+      <button class="btn" id="vizPause" type="button" disabled>Duraklat</button>
+      <button class="btn" id="vizStop" type="button" disabled>Bitir</button>
+      <button class="btn" id="vizDone" type="button" disabled>Seansı Bitir 🎉</button>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div id="vizText" class="help" style="line-height:1.6"></div>
+    </div>
+    <textarea id="notes" placeholder="İstersen 1-2 not yaz..."></textarea>
+  </div>
+</div>
+
+<script>
+// ===== Pages
+const pages={1:document.getElementById('s1'),2:document.getElementById('s2'),3:document.getElementById('s3')};
+function show(i){ for(const k in pages){ pages[k].style.display = (+k===i)?'block':'none'; } }
+
+// ===== Stage 1: Breath
+const patSel=document.getElementById('pat'), durInp=document.getElementById('dur');
+const ball=document.getElementById('ball'), phase=document.getElementById('phase'), sub=document.getElementById('sub');
+const prog=document.getElementById('prog'), start=document.getElementById('start'), pause=document.getElementById('pause'), stop=document.getElementById('stop'), next1=document.getElementById('next1');
+let run=false, paused=false, step=0, stepElapsed=0, totalElapsed=0, target=60000, cycles=0, raf=null;
+const labels=['Nefes Al','Bekle','Nefes Ver','Bekle'];
+function applyBall(p, label){
+  const scale = (label==='Nefes Al')? (1+0.35*p) : (label==='Nefes Ver')? (1.35-0.35*p) : 1.35;
+  ball.style.transform = `scale(${scale.toFixed(3)})`;
+  phase.textContent = label;
+}
+function tick(){
+  if(!run || paused) return;
+  const now=performance.now();
+  const dt=now - tick._last; tick._last=now;
+  stepElapsed+=dt; totalElapsed+=dt;
+  const pat = patSel.value.split(',').map(Number);
+  const curMs = Math.max(1, pat[step])*1000;
+  const p = Math.min(1, stepElapsed/curMs);
+  applyBall(p, labels[step]);
+  prog.style.width = Math.min(100, (totalElapsed/target)*100) + '%';
+  if(p>=1){
+    stepElapsed=0; step=(step+1)%4;
+    if(step===0){ cycles++; if(cycles>=3) next1.disabled=false; }
+  }
+  if(totalElapsed>=target){ stop.click(); }
+  raf = requestAnimationFrame(tick);
+}
+function startBreath(){ if(run) return; target=Math.min(900, Math.max(20, +durInp.value||60))*1000; run=true; paused=false; step=0; stepElapsed=0; totalElapsed=0; cycles=0; tick._last=performance.now(); start.disabled=true; pause.disabled=false; stop.disabled=false; tick(); }
+function pauseBreath(){ if(!run) return; paused=!paused; pause.textContent= paused?'Devam':'Duraklat'; if(!paused){ tick._last=performance.now(); tick(); } }
+function stopBreath(){ if(!run) return; run=false; cancelAnimationFrame(raf); start.disabled=false; pause.disabled=true; stop.disabled=true; phase.textContent='Hazır'; sub.textContent='Akışı takip et'; ball.style.transform='scale(1)'; prog.style.width='0%'; }
+start.addEventListener('click', startBreath); pause.addEventListener('click', pauseBreath); stop.addEventListener('click', stopBreath);
+next1.addEventListener('click', ()=>show(2));
+
+// ===== Stage 2: Body Relax Lite
+const regionEl=document.getElementById('region'), phase2=document.getElementById('phase2'), timer2=document.getElementById('timer2');
+const ball2=document.getElementById('ball2'), start2=document.getElementById('start2'), pause2=document.getElementById('pause2'), stop2=document.getElementById('stop2'), next2=document.getElementById('next2');
+const regions=['Omuzlar','Çene','Eller','Alın']; let rIdx=0, mode='hazir', left=0, run2=false, paused2=false, tmr=null;
+function render2(){ regionEl.textContent = run2? regions[rIdx] : 'Hazır'; phase2.textContent = mode==='tense'?'Sık': mode==='relax'?'Bırak':'Bekle'; timer2.textContent = String(left).padStart(2,'0'); }
+function pulse2(scale){ ball2.style.transform = 'scale('+scale.toFixed(3)+')'; }
+function nextPhase(){ if(mode==='hazir' || mode==='relax'){ mode='tense'; left=5; pulse2(1.2); } else { mode='relax'; left=7; pulse2(1.0); } render2(); }
+function tick2(){ if(!run2 || paused2) return; if(left>0){ left--; timer2.textContent=String(left).padStart(2,'0'); } if(left<=0){ if(mode==='relax'){ rIdx++; if(rIdx>=regions.length){ clearInterval(tmr); run2=false; pause2.disabled=true; stop2.disabled=true; next2.disabled=false; phase2.textContent='Bitti'; pulse2(1); return; } mode='hazir'; nextPhase(); } else { nextPhase(); } } }
+function startBody(){ if(run2) return; run2=true; paused2=false; rIdx=0; mode='hazir'; nextPhase(); start2.disabled=true; pause2.disabled=false; stop2.disabled=false; tmr=setInterval(tick2,1000); }
+function pauseBody(){ if(!run2) return; paused2=!paused2; pause2.textContent = paused2?'Devam':'Duraklat'; }
+function stopBody(){ if(!run2) return; run2=false; clearInterval(tmr); start2.disabled=false; pause2.disabled=true; stop2.disabled=true; next2.disabled=true; rIdx=0; mode='hazir'; left=0; render2(); pulse2(1); }
+start2.addEventListener('click', startBody); pause2.addEventListener('click', pauseBody); stop2.addEventListener('click', stopBody);
+next2.addEventListener('click', ()=>show(3));
+
+// ===== Stage 3: Visualization (with ocean waves)
+const vizLeft=document.getElementById('vizLeft'), vizText=document.getElementById('vizText');
+const vizStart=document.getElementById('vizStart'), vizPause=document.getElementById('vizPause'), vizStop=document.getElementById('vizStop'), vizDone=document.getElementById('vizDone');
+const wavesOn=document.getElementById('wavesOn'), vol=document.getElementById('vol'); const notes=document.getElementById('notes');
+const lines=[
+  'Güvenli bir yerde oturduğunu hayal et. Zemin sağlam, bedenin destekleniyor.',
+  'Nefes alışta göğsün nazikçe yükseliyor, verişte gevşiyor.',
+  'Işık ve renkleri fark et; ortamın sana iyi gelen ayrıntılarını seç.',
+  'Uzak bir sesi duy ve geçmesine izin ver; dalgalar gibi geliyor, geçiyor.',
+  'Şimdi kendine fısılda: “Tam şu anda güvendeyim.”'
+];
+let vRun=false, vPaused=false, vLeft=60, vT=null, vI=0;
+function renderViz(){ vizLeft.textContent=String(vLeft); vizText.textContent = lines[vI]; }
+function vTick(){ if(!vRun || vPaused) return; vLeft--; if(vLeft%12===0){ vI=(vI+1)%lines.length; } renderViz(); if(vLeft<=0){ clearInterval(vT); vRun=false; vizDone.disabled=false; stopWaves(); } }
+function vStart(){ if(vRun) return; vRun=true; vPaused=false; vLeft=60; vI=0; renderViz(); vizStart.disabled=true; vizPause.disabled=false; vizStop.disabled=false; vizDone.disabled=true; if(wavesOn.checked) startWaves(); vT=setInterval(vTick,1000); }
+function vPause(){ if(!vRun) return; vPaused=!vPaused; vizPause.textContent=vPaused?'Devam':'Duraklat'; }
+function vStop(){ if(!vRun) return; clearInterval(vT); vRun=false; vLeft=60; vI=0; renderViz(); vizStart.disabled=false; vizPause.disabled=true; vizStop.disabled=true; vizDone.disabled=true; vizPause.textContent='Duraklat'; stopWaves(true); }
+vizStart.addEventListener('click', vStart); vizPause.addEventListener('click', vPause); vizStop.addEventListener('click', vStop);
+vizDone.addEventListener('click', ()=>{ alert('Seans tamamlandı 🎉 Harika iş!'); vStop(); show(1); });
+
+// ===== Ocean wave generator (WebAudio)
+let actx=null, noiseBuf=null, src=null, filt=null, gain=null, lfo=null, lfoGain=null;
+function buildNoiseBuffer(){ if(noiseBuf) return noiseBuf; const sr=actx.sampleRate; const len=sr*2; const buf=actx.createBuffer(1,len,sr); const data=buf.getChannelData(0); for(let i=0;i<len;i++){ data[i]=Math.random()*2-1; } noiseBuf=buf; return buf; }
+function startWaves(){ try{ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); const buf=buildNoiseBuffer(); src = actx.createBufferSource(); src.buffer=buf; src.loop=true; filt = actx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=500; filt.Q.value=0.0001; gain = actx.createGain(); gain.gain.value = (+vol.value/100)*0.2; lfo = actx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.2; lfoGain = actx.createGain(); lfoGain.gain.value = (+vol.value/100)*0.12; lfo.connect(lfoGain); lfoGain.connect(gain.gain); src.connect(filt); filt.connect(gain); gain.connect(actx.destination); src.start(); lfo.start(); }catch(e){ console.log('audio err', e); } }
+function stopWaves(hard){ try{ if(lfo){ lfo.stop(); lfo.disconnect(); lfo=null; } if(src){ src.stop(); src.disconnect(); src=null; } if(gain){ gain.disconnect(); gain=null; } if(filt){ filt.disconnect(); filt=null; } if(lfoGain){ lfoGain.disconnect(); lfoGain=null; } if(hard && actx){ actx.close(); actx=null; noiseBuf=null; } }catch(e){} }
+vol.addEventListener('input', ()=>{ if(gain){ const base=(+vol.value/100)*0.2; const mod=(+vol.value/100)*0.12; try{ gain.gain.setValueAtTime(base, actx.currentTime); if(lfoGain) lfoGain.gain.setValueAtTime(mod, actx.currentTime); }catch(_){ if(gain) gain.gain.value=base; if(lfoGain) lfoGain.gain.value=mod; } } });
+</script>
+</body>
+</html>
